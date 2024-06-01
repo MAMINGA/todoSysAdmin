@@ -8,3 +8,4 @@ The script is designed so that the ease of use daily is better, at the expense o
 
 You can change the path to the file for storing the data in the top of the code.
 Id for each task are '~autoincremented' by the code.
+Comments are in the code to understand every section of it.
