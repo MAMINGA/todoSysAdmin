@@ -7,3 +7,4 @@ User input is controlled as much as possible.
 The script is designed so that the ease of use daily is better, at the expense of the first uses of the script.
 
 You can change the path to the file for storing the data in the top of the code.
+Id for each task are '~autoincremented' by the code.
