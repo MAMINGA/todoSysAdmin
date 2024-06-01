@@ -301,12 +301,14 @@ search_task() {
 show_help() {
     echo "Usage: $0 <command>"
     echo "Commands:"
-    echo "  create      Create a new task"
-    echo "  update      Update an existing task (by ID)"
-    echo "  delete      Delete a task (by ID)"
-    echo "  info        Show information of a task (by ID)"
-    echo "  list        List tasks of a given day (second argument of the command) in two sections: completed and uncompleted"
-    echo "  search      Search a task by its title"
+    echo "If no argument is passed it diplays the task of the current day."
+    echo "  -c          Create a new task can be given two arguments first: title and second: due_date"
+    echo "  -u          Update an existing task (by ID) can be given as an argument"
+    echo "  -d          Delete a task (by ID can be given as an argument"
+    echo "  -i          Show information of a task (by ID) can be given as an argument"
+    echo "  -l          List tasks of a given day (second argument of the command) in two sections: completed and uncompleted"
+    echo "  -la         List all tasks in two sections: completed and uncompleted"
+    echo "  -s          Search a task by its title can be given as an argument"
 }
 
 
