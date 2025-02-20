@@ -1,25 +1,9 @@
 #!/bin/bash
 
 # Path for the tasks file
-TASKS_PATH="$HOME/Documents/Projects/todo.txt"
+TASKS_PATH="$HOME/.todo_list"
 
-# Validation of the date as date -d is not supported on macOS
-validate_date() {
-    local date="$1"
 
-    # Checks if its not in the nn-nn-nnnn format
-    if ! [[ "$date" =~ ^[0-9]{2}-[0-9]{2}-[0-9]{4}$ ]]; then
-        return 1
-    fi
-
-    # Convert dd-mm-yyyy to yyyy-mm-dd and try to parte the date using the date command
-    local reformatted_date=$(echo "$date" | awk -F- '{print $3"-"$2"-"$1}')
-    if ! date -jf "%Y-%m-%d" "$reformatted_date" >/dev/null 2>&1; then
-        return 1
-    fi
-
-    return 0
-}
 
 create_task() {
     # Verify if task is not created  
@@ -86,68 +70,9 @@ create_task() {
     echo "$task_id;$title;$description;$location;$due_date;$completion" >> "$TASKS_PATH" && echo "Task added successfully."
 }
 
-update_task() {
-    local task_id=$1
-    # Taking and cheking the validity of the given id
-    task_id_exists=false
-    while ! $task_id_exists; do
-        while IFS=';' read -r id _; do
-            if [ "$id" = "$task_id" ]; then
-                task_id_exists=true
-                break
-            fi
-        done < "$TASKS_PATH"
-        if ! $task_id_exists; then
-            echo "Error: ID not found or invalid. Please enter the ID:" >&2
-            read -r task_id
-        fi
-    done
 
-    # Taking and cheking the update options
-    while true; do
-        echo "What do you want to update? (1. Title, 2. Description, 3. Location, 4. Due Date, 5. Completion)"
-        read -r choice
-        if [[ "$choice" =~ ^[1-5]$ ]]; then
-            break 
-        else
-            echo "Invalid choice. Please choose a number between 1 and 5" >&2
-        fi
-    done
 
-    # Saving the new value
-    echo "Enter the new value: "
-    read -r new_value
-
-    # Validating the input for specific fields
-    case $choice in
-        4)
-            # Validate the new due date
-            while true; do
-                if  validate_date "$new_value"; then
-                    break
-                else 
-                    echo "Enter the due date of the task (DD-MM-YYYY): "
-                    read -r new_value
-                fi  
-            done
-            ;;
-        5)
-            # Validate the completion status (default not completed)
-            if [ "$new_value" != "completed" ]; then
-                new_value="notcompleted"
-            fi
-            ;;
-    esac
-
-    # Update the specified field
-    awk -v task_id="$task_id" -v choice="$choice" -v new_value="$new_value" 'BEGIN {FS=OFS=";"} $1 == task_id {
-        if (choice == 1) $2 = new_value;
-        else if (choice == 2) $3 = new_value;
-        else if (choice == 3) $4 = new_value;
-        else if (choice == 4) $5 = new_value;
-        else if (choice == 5) $6 = new_value;
-    } 1' "$TASKS_PATH" > temp && mv temp "$TASKS_PATH" && echo "Task updated successfully."
-}
+    
 
 delete_task() {
     local task_id=$1
@@ -170,42 +95,7 @@ delete_task() {
     awk -v task_id="$task_id" 'BEGIN {FS=OFS="    "} $1 != task_id {print $0}' "$TASKS_PATH" > temp && mv temp "$TASKS_PATH" && echo "Task deleted successfully."
 }
 
-task_info() {
-    local task_id=$1
-    # Taking and cheking the validity of the given id
-    task_id_exists=false
-    while ! $task_id_exists; do
-        while IFS=';' read -r id _; do
-            if [ "$id" = "$task_id" ]; then
-                task_id_exists=true
-                break
-            fi
-        done < "$TASKS_PATH"
-        if ! $task_id_exists; then
-            echo "Error: ID not found or invalid. Please enter the ID:" >&2
-            read -r task_id
-        fi
-    done
 
-    # Utilisation de awk pour rechercher la tâche spécifique et l'afficher
-    awk -v task_id="$task_id" -F ';' 'BEGIN {found=0}
-        $1 == task_id {
-            print "Task ID: " $1
-            print "Title: " $2
-            print "Description: " $3
-            print "Location: " $4
-            print "Due Date: " $5
-            print "Completion: " $6
-            found=1
- exit
-        }
-        END {
-            if(found==0){
-                print "Task with ID " task_id " not found"
-            }
-        }
-    ' "$TASKS_PATH"
-}
 
 list_tasks() {
 
@@ -273,83 +163,38 @@ list_all() {
     fi
 }
 
-# Searching the task by title
-search_task() {
-    # Making sure the title is not an empty string
-    local search_title="$1"
-    while true; do
-        if [ -z "$search_title" ]; then
-            echo "Error: Title cannot be empty. Please enter a title." >&2
-            read -r search_title
-        else
-            break
-        fi
-    done
 
-    # Recherche de toutes les tâches ayant le même titre
-    matching_tasks=$(awk -v title="$search_title" 'BEGIN {FS=OFS=";"}{if($2 == title) print $0}' "$TASKS_PATH")
 
-    # Affichage des tâches correspondantes
-    if [ -n "$matching_tasks" ]; then
-        echo "Tasks with title '$search_title':"
-        echo "$matching_tasks" | column -s ';' -t
-    else
-        echo "No tasks found with title '$search_title'."
+
+
+
+
+todo() {
+    # Si aucun argument n'est passé, afficher message d erreur
+    if [ $# -eq 0 ]; then
+        echo "La commande ’todo ’ s ’ ex´ecute avec ’ todo ( add | done | list ) ( arguments ) ’"
+        
+        exit 0
     fi
-}
 
-show_help() {
-    echo "Usage: $0 <command>"
-    echo "Commands:"
-    echo "If no argument is passed it diplays the task of the current day."
-    echo "  -c          Create a new task can be given two arguments first: title and second: due_date"
-    echo "  -u          Update an existing task (by ID) can be given as an argument"
-    echo "  -d          Delete a task (by ID can be given as an argument"
-    echo "  -i          Show information of a task (by ID) can be given as an argument"
-    echo "  -l          List tasks of a given day (second argument of the command) in two sections: completed and uncompleted"
-    echo "  -la         List all tasks in two sections: completed and uncompleted"
-    echo "  -s          Search a task by its title can be given as an argument"
-}
+    # Vérifier le premier argument pour déterminer quelle fonctionnalité exécuter
+    case "$1" in
+        add)
+            create_task $2 $3
+            ;;
+        
+        done)
+            delete_task $2
+            ;;
+    
+        
+        list)
+            list_all
+            ;;
+        
+        *)
+            echo "La commande ’todo ’ s ’ ex´ecute avec ’ todo ( add | done | list ) ( arguments ) ’"
+            exit 1
+            ;;
 
-
-# Vérifier si l'argument --help est passé
-if [ "$1" = "--help" ]; then
-    show_help
-    exit 0
-fi
-
-# Si aucun argument n'est passé, afficher les tâches du jour actuel
-if [ $# -eq 0 ]; then
-    current_date=$(date +'%d-%m-%Y')
-    list_tasks "$current_date"
-    exit 0
-fi
-
-# Vérifier le premier argument pour déterminer quelle fonctionnalité exécuter
-case "$1" in
-    -c)
-        create_task $2 $3
-        ;;
-    -u)
-        update_task $2
-        ;;
-    -d)
-        delete_task $2
-        ;;
-    -i)
-        task_info $2
-        ;;
-    -l)
-        list_tasks $2
-        ;;
-    -a)
-        list_all
-        ;;
-    -s)
-        search_task $2
-        ;;
-    *)
-        echo "Error: Unknown command '$1'. Use --help for usage."
-        exit 1
-        ;;
-esac
+    esac}
